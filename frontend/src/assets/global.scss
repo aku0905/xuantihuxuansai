@@ -1,0 +1,165 @@
+/* global.scss */
+
+/* 定义全局变量 */
+$primary-color: #3498db;
+$primary-color-hover: #2980b9;
+$background-color: #f4f7f9;
+$text-color: #333;
+$heading-color: #2c3e50;
+$card-background: #ffffff;
+$card-shadow: rgba(0, 0, 0, 0.1);
+$card-hover-shadow: rgba(0, 0, 0, 0.2);
+$button-bg: #007bff;
+$button-hover-bg: #0056b3;
+$button-disabled-bg: #6c757d;
+
+/* 全局样式 */
+body {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    background-color: $background-color;
+    color: $text-color;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    transition: background-color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin: 20px 0;
+    color: $heading-color;
+}
+
+a {
+    color: $primary-color;
+    text-decoration: none;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: $primary-color-hover;
+        text-decoration: underline;
+    }
+}
+
+button {
+    background-color: $button-bg;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+    display: block;
+    width: 50%;
+
+    &:hover {
+        background-color: $button-hover-bg;
+    }
+
+    &.disabled {
+        background-color: $button-disabled-bg;
+        cursor: not-allowed;
+        &:hover {
+            background-color: $button-disabled-bg;
+        }
+    }
+}
+
+.container {
+    width: 85%;
+    margin: 0 auto;
+    max-width: 1200px;
+
+    @media (max-width: 768px) {
+        width: 90%;
+    }
+}
+
+button.disabled {
+    background-color: $button-disabled-bg !important;
+    cursor: not-allowed;
+}
+
+
+
+.card {
+    background-color: $card-background;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px $card-shadow;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+
+    &:hover {
+        box-shadow: 0 8px 24px $card-hover-shadow;
+        transform: translateY(-5px);
+    }
+
+    .card-header {
+        font-size: 1.6em;
+        margin-bottom: 10px;
+        color: $heading-color;
+    }
+
+    .card-content {
+        font-size: 1em;
+        color: $text-color;
+    }
+}
+
+/* 新增样式 */
+.rewards-container {
+    padding: 20px;
+}
+
+.loading {
+    text-align: center;
+    font-size: 18px;
+}
+
+.error {
+    color: red;
+    text-align: center;
+}
+
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 10px;
+}
+
+.reward-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.reward-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.reward-name {
+    font-size: 20px;
+    margin: 10px 0;
+    color: $heading-color;
+}
+
+.reward-description {
+    font-size: 14px;
+    color: #555;
+}
+
+.reward-points {
+    font-size: 16px;
+    margin: 10px 0;
+}

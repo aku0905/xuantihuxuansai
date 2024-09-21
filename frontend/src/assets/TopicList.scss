@@ -1,0 +1,219 @@
+/* 整体布局 */
+.topic-list {
+  padding: 00px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/*
+.page-title {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 2em;
+  font-weight: bold;
+  color: #333;
+}
+*/
+
+
+/* 提交选题部分 */
+.add-topic {
+  max-width: 1200px;
+  margin-bottom: 30px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-topic-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-field {
+  padding: 10px;
+  width: 100%;
+  height: 40px; /* 统一高度 */
+  box-sizing: border-box;
+  font-size: 0.8em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+textarea.input-field {
+  height: 40px; /* 与其他输入框统一高度 */
+}
+
+.submit-button2 {
+  padding: 10px 20px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  height: 40px; /* 与输入框高度一致 */
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center; /* 确保按钮内部文字居中 */
+  margin-top: 20px; /* 按钮与上方内容间距 */
+
+}
+
+.submit-button2:hover {
+  background-color: #0056b3;
+}
+
+/* 卡片部分布局 */
+.topics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.topic-item {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left; /* 确保所有内容左对齐 */
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+  word-wrap: break-word; /* 防止文本溢出 */
+}
+
+/* 鼠标悬停时显示完整内容 */
+.topic-item:hover {
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+  overflow: visible;
+}
+
+.topic-title {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.topic-info{
+  font-size: 1em;
+  //color: #555555;
+  text-align: left;
+}
+
+.topic-description {
+  font-size: 1em;
+  color: #555;
+  line-height: 1.5;
+  height: 40px; /* 设置一个初始高度 */
+  overflow: hidden;
+  text-overflow: ellipsis; /* 溢出时用省略号表示 */
+  text-align: left !important;
+}
+
+.topic-description:hover {
+  white-space: normal;
+  height: auto;
+  text-overflow: clip; /* 悬停时显示完整文本 */
+}
+
+/* 出题人和认领人对齐 */
+.topic-header {
+  display: flex;
+  justify-content: space-between; /* 左右对齐 */
+}
+
+.topic-owner {
+  font-size: 1em;
+  color: #777;
+  text-align: right;
+}
+
+/* 出题人和选题状态同一行 */
+.topic-meta {
+  font-size: 1em;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between; /* 出题人右对齐，状态左对齐 */
+}
+
+.topic-status {
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.topic-owner {
+  text-align: right;
+  color: #777;
+}
+
+/* 小文字的样式 */
+.small-text {
+  font-size: 1em;
+  color: #666;
+  text-align: right;
+}
+
+/* 按钮组样式 */
+.submit-button, .cancel-button {
+  padding: 10px;
+  width: 48%;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button3 {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  width: 48%;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  margin-left: 25%;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.submit-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
+}
+
+.cancel-button {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #d9363e;
+}
+
+/* 修改按钮组样式，使按钮水平居中并增加间距 */
+.button-group {
+  display: flex;
+  justify-content: center; /* 将按钮居中对齐 */
+  gap: 20px; /* 按钮之间的间距 */
+  margin-top: 10px;
+}
+
+/* 提交链接的输入框高度统一 */
+.submission-section .input-field {
+  height: 40px; /* 与其他输入框高度一致 */
+  padding: 20px;
+  width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+
+}
