@@ -93,6 +93,13 @@ frontend/                    # 前端代码，基于 Vue.js 框架
   flask run
   ```
 
+- 如不能启动，可以检查下python 环境和工作目录的设置。在项目根目录下运行。
+  ```bash
+  $env:PYTHONPATH="根目录"
+  python backend/app.py
+  ```
+
+
 ### 2. 前端安装
 
 - 进入前端目录：
