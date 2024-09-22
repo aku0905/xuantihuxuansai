@@ -224,22 +224,26 @@ def update_existing_topic(topic_id, data):
         # 提交作品时为提出者和认领者加分
         if data.get('submission_link'):
 
+            # 提出者加分
             # 查询该题目是否已经被提交过
             previous_submission = PointAction.query.filter_by(topic_id=topic_id, action_type='题目被完成').first()
 
-            # 查询提出者本周累计加分是否超过15分
-            if not previous_submission:
-                current_week_proposed_points = db.session.query(func.sum(PointAction.points)).filter(
-                    PointAction.user_id == proposed_by,
-                    PointAction.action_type == '题目被完成',
-                    func.week(PointAction.created_at) == func.week(func.now())
-                ).scalar() or 0 # 使用 scalar() 获取聚合值，防止 None
+            # 如果提出者不等于认领者，才能加分
+            if proposed_by != claimed_by:
+                # 查询提出者本周累计加分是否超过15分
+                if not previous_submission:
+                    current_week_proposed_points = db.session.query(func.sum(PointAction.points)).filter(
+                        PointAction.user_id == proposed_by,
+                        PointAction.action_type == '题目被完成',
+                        func.week(PointAction.created_at) == func.week(func.now())
+                    ).scalar() or 0 # 使用 scalar() 获取聚合值，防止 None
 
-                # 如果提出者的本周积分未超过15分，则增加5分
-                if current_week_proposed_points < 15:
-                    points_to_add = min(5, 15 - current_week_proposed_points)
-                    update_user_points(user_id=proposed_by, points=points_to_add, action_type='题目被完成', topic_id=topic_id)
+                    # 如果提出者的本周积分未超过15分，则增加5分
+                    if current_week_proposed_points < 15:
+                        points_to_add = min(5, 15 - current_week_proposed_points)
+                        update_user_points(user_id=proposed_by, points=points_to_add, action_type='题目被完成', topic_id=topic_id)
 
+            #认领者加分
             # 查询认领者本周累计加分是否超过15分
             current_week_claimed_points = db.session.query(func.sum(PointAction.points)).filter(
                 PointAction.user_id == claimed_by,
