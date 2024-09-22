@@ -58,7 +58,7 @@ frontend/                    # 前端代码，基于 Vue.js 框架
 - **Python 3.8+** (后端)
 - **Flask 2.0+**
 - **Vue.js 3.0+** (前端)
-- **MySQL 5.7+** (数据库)
+- **MySQL 8.0+** (数据库)
 
 ---
 
@@ -69,7 +69,7 @@ frontend/                    # 前端代码，基于 Vue.js 框架
 - 克隆项目代码：
 
   ```bash
-  git 自行复制
+  git https://github.com/aku0905/xuantihuxuansai.git
   cd yourproject/backend
   ```
 
