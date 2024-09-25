@@ -9,11 +9,12 @@ module.exports = {
         }
     },
     chainWebpack: config => {
-        // 添加 DefinePlugin 插件
         config.plugin('define')
             .use(webpack.DefinePlugin, [{
-                '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': JSON.stringify(true),
-                // 如果有其他需要的标志，可以在这里添加
+                'process.env': {
+                    NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+                    VUE_APP_API_URL: JSON.stringify(process.env.VUE_APP_API_URL || 'http://134.175.170.70:5000')
+                }
             }]);
     }
 };

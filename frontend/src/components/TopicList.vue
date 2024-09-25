@@ -31,10 +31,10 @@
             <div class="topic-header">
               <span class="topic-title">{{ topic.topic_name }}</span>
             </div>
-            <p class="topic-description">{{ topic.topic_description }}</p>
+            <p class="topic-description" >{{ topic.topic_description }}</p>
             <div class="topic-meta">
               <span class="topic-status">状态: {{ topic.status }}</span>
-              <span class="topic-owner">出题人: {{ topic.proposed_by_username }}</span>
+              <span class="topic-owner">出题人:{{ topic.proposed_by_username }}</span>
             </div>
             <div class="submission-section">
               <template v-if="topic.submission_link">
@@ -44,8 +44,10 @@
               </template>
               <template v-else>
                 <input v-model="submissionLinks[topic.topic_id]" placeholder="提交链接" class="input-field" />
-                <button @click="submitLink(topic.topic_id)" class="submit-button">提交</button>
-                <button @click="cancelClaim(topic.topic_id)" class="cancel-button">取消</button>
+                  <div>
+                    <button @click="submitLink(topic.topic_id)" class="submit-button">提交</button>
+                    <button @click="cancelClaim(topic.topic_id)" class="cancel-button">取消</button>
+                  </div>
               </template>
             </div>
           </div>
@@ -82,8 +84,8 @@
               class="topic-item card"
           >
             <div class="topic-header">
-              <span class="topic-title">{{ topic.topic_name }}</span>
-              <span class="topic-owner">出题人: {{ topic.proposed_by_username }}</span>
+              <span class="topic-title2">{{ topic.topic_name }}</span>
+              <span class="topic-owner">出题人: <br> {{ topic.proposed_by_username }}</span>
             </div>
             <p class="topic-description">{{ topic.topic_description }}</p>
             <div class="topic-meta small-text">
@@ -102,7 +104,10 @@
 </template>
 
 
+<style lang="scss" scoped>
+@import "../assets/TopicList.scss";
 
+</style>
 
 
 <script setup>
@@ -444,6 +449,4 @@ function showMessage(msg, type) {
 
 </script>
 
-<style lang="scss" scoped>
-@import "../assets/TopicList.scss";
-</style>
+

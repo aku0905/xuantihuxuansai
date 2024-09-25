@@ -1,7 +1,7 @@
 // src/services/apiService.js
 import axios from 'axios';
 
-const apiUrl = process.env.VUE_APP_API_URL || 'http://127.0.0.1:5000';
+const apiUrl = process.env.VUE_APP_API_URL || 'http://134.175.170.70:5000';
 
 const api = axios.create({
     baseURL: apiUrl,

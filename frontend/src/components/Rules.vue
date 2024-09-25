@@ -48,7 +48,7 @@
       <li>每周出一个新题目：每提供一个新题目，积分+2，积分上限为6分/每周。</li>
       <li>出的题目被选中并完成：若提出的题目被完成，提出者积分+5，积分上限为15分/每周。</li>
       <li>每周选择一个题目并提交作品：完成题目后，认领人积分+15，积分上限为15分/每周。</li>
-      <li>同一提交的特殊情况：若完成题目时，出题人和认领人为同一人，提出者积分-7（此前出题积分已+2,題目被完成积分+5）。</li>
+      <li>同一提交的特殊情况：若完成题目时，出题人和认领人为同一人，提出者积分-7（此前出题积分已+2,题目被完成积分+5）。</li>
     </ol>
 
     <h2>🏆 积分兑换</h2>
@@ -58,21 +58,22 @@
 
     <h2>⚠️ 温馨提示</h2>
     <p>
-      提交作品时，请附上正确链接【验证格式：https://cloud.tencent.com/developer/article/{column}，colunm为文章编号，正常打开文章复制url即可】，以便积分统计顺利进行。希望大家积极参与，祝您在活动中取得好成绩！
+      提交作品时，请附上正确链接【验证格式：https://cloud.tencent.com/developer/article/{column}，column为文章编号，正常打开文章复制url即可】，以便积分统计顺利进行。希望大家积极参与，祝您在活动中取得好成绩！
     </p>
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .rules-container {
+  max-width: 1200px; /* 添加最大宽度 */
+  margin: 20px auto; /* 居中 */
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f5f7fa; /* 与其他页面背景统一 */
   font-family: Arial, sans-serif;
   line-height: 1.6;
-  margin: 20px;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  text-align: left; /* 左对齐 */
+  text-align: left;
 }
 
 h1 {
@@ -82,6 +83,7 @@ h1 {
 
 h2 {
   color: #2980b9;
+  margin-top: 20px; /* 增加顶部间距 */
 }
 
 table {
@@ -104,10 +106,9 @@ ul, ol {
   margin-left: 20px;
 }
 
-/* 新增：处理长链接和文本溢出 */
 p {
-  word-wrap: break-word;       /* 支持旧版浏览器的自动换行 */
-  overflow-wrap: break-word;   /* 标准方式处理自动换行 */
-  word-break: break-all;       /* 防止超长单词溢出 */
+  word-wrap: break-word; /* 支持旧版浏览器的自动换行 */
+  overflow-wrap: break-word; /* 标准方式处理自动换行 */
+  word-break: break-all; /* 防止超长单词溢出 */
 }
 </style>

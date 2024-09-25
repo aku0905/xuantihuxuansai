@@ -1,5 +1,3 @@
-// TopicList.scss
-
 $primary-color: #3498db;
 $secondary-color: #2ecc71;
 $background-color: #f5f7fa;
@@ -41,6 +39,7 @@ $border-radius: 8px;
     .topic-info {
       font-size: 1rem;
       margin-bottom: 10px;
+      text-align: left;
     }
 
     .input-field {
@@ -64,19 +63,24 @@ $border-radius: 8px;
 
   .topics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); // 调整卡片最小宽度
     gap: 20px;
   }
 
   .topic-item {
     display: flex;
     flex-direction: column;
+    width: 350px;
+    margin: 0 auto;
+    justify-content: center; // 新增属性，使子元素水平居中
 
     .topic-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
+      width: 100%;
+      text-align: left;
     }
 
     .topic-title {
@@ -85,15 +89,27 @@ $border-radius: 8px;
       color: $primary-color;
     }
 
+    .topic-title2 {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: $primary-color;
+      flex: 0 0 75%;
+    }
+
     .topic-description {
       flex-grow: 1;
       margin-bottom: 15px;
+      text-align: left;
     }
 
     .topic-meta {
+      display: flex;
+      justify-content: space-between; // 左右对齐
+      width: 100%; // 确保使用整个宽度
       font-size: 0.9rem;
       color: #666;
       margin-bottom: 10px;
+      text-align: left;
 
       span {
         margin-right: 10px;
@@ -104,19 +120,29 @@ $border-radius: 8px;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+      width: 100%; // 添加这一行
     }
   }
 
-  .submit-button, .submit-button2, .submit-button3, .cancel-button {
+  .submit-button,
+  .submit-button2,
+  .submit-button3,
+  .cancel-button {
+
+    text-align: center; // 添加此行，确保按钮文本居中
+
     padding: 8px 15px;
     border: none;
     border-radius: $border-radius;
     cursor: pointer;
     transition: background-color 0.3s ease;
     font-weight: bold;
+    width: 150px;
+    margin: 0 auto; // 添加这一行
   }
 
-  .submit-button, .submit-button2 {
+  .submit-button,
+  .submit-button2 {
     background-color: $primary-color;
     color: white;
 
