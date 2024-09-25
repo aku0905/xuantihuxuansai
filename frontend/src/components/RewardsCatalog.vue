@@ -1,7 +1,7 @@
 <template>
   <div class="rewards-container">
-    <h1> 积分商城-奖品列表 </h1>
-    <div v-if="loading" class="loading">Loading...</div>
+    <h1>积分商城-奖品列表</h1>
+    <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="rewards-grid">
       <div v-for="reward in sortedRewards" :key="reward.reward_id" class="reward-card">
@@ -9,27 +9,21 @@
         <h2 class="reward-name">{{ reward.name }}</h2>
         <p class="reward-description">{{ reward.description }}</p>
         <p class="reward-points">所需积分: {{ reward.points_required }}</p>
-        <p class="reward-stock" v-if="reward.stock">库存: {{ reward.stock }}</p>  <!-- 添加库存显示 -->
-        <p class="reward-stock" v-else>库存不足</p>  <!-- 库存为 0 时的提示 -->
-        <!-- 按钮用于兑换奖励，根据用户的积分和奖励的库存状态来决定是否禁用按钮 -->
-        <!-- 如果用户积分不足或者奖励库存为0，则按钮被禁用 -->
-        <!-- 点击按钮时触发兑换操作 -->
-        <!-- 如果用户积分不足，按钮标题显示提示信息 -->
-        <button
+        <p class="reward-stock" v-if="reward.stock">库存: {{ reward.stock }}</p>
+        <p class="reward-stock" v-else>库存不足</p>
+        <button1
             :class="{'disabled': userPoints < reward.points_required || reward.stock === 0}"
             @click="handleRedeemClick(reward)"
             :title="userPoints < reward.points_required ? '积分不足，继续写文章积攒积分吧！' : ''"
         >
           马上兑换
-        </button>
+        </button1>
       </div>
     </div>
   </div>
 </template>
 
-
 <script>
-import axios from 'axios';
 import api from "@/services/apiService";
 
 export default {
@@ -50,19 +44,16 @@ export default {
   },
   async created() {
     try {
-      // 获取存储在 localStorage 中的 token
-      const token = localStorage.getItem('authToken');  // 替换为实际存储 token 的方式
-
+      const token = localStorage.getItem('authToken');
       const headers = {
-        Authorization: `Bearer ${token}`,  // 添加 token 到请求头
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       };
 
-      // 发送请求的时候包含 headers
-      const response = await api.get('/rewards',{headers});  // 替换成你的 API URL
+      const response = await api.get('/rewards', {headers});
       this.rewards = response.data;
     } catch (err) {
-      this.error = 'Failed to load rewards';
+      this.error = '加载奖品失败';
       console.error(err);
     } finally {
       this.loading = false;
@@ -82,41 +73,54 @@ export default {
     },
     async redeemReward(rewardId) {
       try {
-        // 获取存储在 localStorage 中的 token
-        const token = localStorage.getItem('authToken');  // 替换为实际存储 token 的方式
-
+        const token = localStorage.getItem('authToken');
         const headers = {
-          Authorization: `Bearer ${token}`,  // 添加 token 到请求头
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         };
 
-        // 调用兑换 API
-        await api.post(`rewards/${rewardId}/redeem`, { userId: 1 }, { headers });
+        await api.post(`rewards/${rewardId}/redeem`, {userId: 1}, {headers});
         alert('奖励兑换成功！');
-        // 更新用户积分
         this.userPoints -= this.rewards.find(r => r.reward_id === rewardId).points_required;
       } catch (err) {
         alert('兑换奖励失败。');
         console.error(err);
       }
     }
-
   }
 };
 </script>
 
-<style scoped>
-  @import "../assets/global.scss";
-  button {
-    background-color: #007bff !important;
-    color: white;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-bottom: 20px;
-    display: block;
-    width: 100%;
+<style lang="scss" scoped>
+
+@import "../assets/global.scss";
+
+.rewards-container {
+  padding: 20px;
+}
+
+button1 {
+  background-color: #2ecc71; /* 使用绿色作为主色 */
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 8px; /* 增加圆角 */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 20px;
+  display: block;
+  width: 100%;
+
+  &.disabled {
+    background-color: grey; /* 禁用状态颜色 */
+    cursor: not-allowed;
   }
+
+  &:hover:not(.disabled) {
+    background-color: #27ae60; /* 悬停效果，使用深绿色 */
+  }
+}
 </style>
+
+
+

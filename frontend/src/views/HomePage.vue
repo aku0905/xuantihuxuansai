@@ -8,7 +8,8 @@
     <!-- 选题列表组件，展示所有选题信息 -->
     <topicList />
     <!-- 用户排名组件 展示所有用户的排名信息-->
-    <UserRanking />
+    <User_monthRanking />
+
 <!--    &lt;!&ndash; 奖励组件，展示用户的奖励信息 &ndash;&gt;-->
 <!--    <RewardsCatalog.vue />-->
 
@@ -20,6 +21,7 @@
 // import UserInfo from '../components/UserInfo.vue';
 import UserInfo from '@/components/UserInfo.vue';
 import UserRanking from '@/components/UserRanking.vue';
+import User_monthRanking from "@/components/UserMonthRanking.vue";
 import RewardsCatalog from "@/components/RewardsCatalog.vue";
 import topicList  from "@/components/TopicList.vue";
 import Rules from "@/components/Rules.vue";
@@ -30,6 +32,7 @@ export default {
     Rules,
     UserInfo, // 用户信息组件
     UserRanking, // 用户排名组件
+    User_monthRanking,
     RewardsCatalog, // 奖励目录组件
     topicList
   }

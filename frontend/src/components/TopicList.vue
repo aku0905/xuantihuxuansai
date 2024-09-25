@@ -6,17 +6,14 @@
     <div class="add-topic card">
       <h3>提交选题</h3>
 
-      <!-- 显示选题方向名称（不可编辑） -->
       <div class="add-topic-row">
         <p class="topic-info"><strong>本期主题：</strong> {{ latestDirection.direction_name }}</p>
       </div>
 
-      <!-- 显示选题方向描述（不可编辑） -->
       <div class="add-topic-row">
         <p class="topic-info"><strong>主题描述：</strong> {{ latestDirection.description }}</p>
       </div>
 
-      <!-- 提交选题内容 -->
       <div class="add-topic-row">
         <input v-model="newTopic.title" placeholder="输入你要提出的题目：（不少于5个字符）" class="input-field" />
         <textarea v-model="newTopic.description" placeholder="你希望认领的友友写什么？（不少于10个字符）" class="input-field"></textarea>
@@ -40,17 +37,20 @@
               <span class="topic-owner">出题人: {{ topic.proposed_by_username }}</span>
             </div>
             <div class="submission-section">
-              <input v-model="submissionLinks[topic.topic_id]" placeholder="提交链接" class="input-field" />
-              <div class="button-group">
+              <template v-if="topic.submission_link">
+                <a :href="topic.submission_link" target="_blank" class="hover-info">点击查看文章</a>
+                <input v-model="submissionLinks[topic.topic_id]" placeholder="重新提交链接" class="input-field" />
+                <button @click="submitLink(topic.topic_id)" class="submit-button">重新提交</button>
+              </template>
+              <template v-else>
+                <input v-model="submissionLinks[topic.topic_id]" placeholder="提交链接" class="input-field" />
                 <button @click="submitLink(topic.topic_id)" class="submit-button">提交</button>
                 <button @click="cancelClaim(topic.topic_id)" class="cancel-button">取消</button>
-              </div>
+              </template>
             </div>
           </div>
         </div>
       </div>
-
-
 
       <!-- 未认领选题 -->
       <div v-if="unclaimedTopics.length" class="topic-section">
@@ -71,30 +71,42 @@
           </div>
         </div>
       </div>
+
       <!-- 其他用户已认领的选题 -->
       <div v-if="otherClaimedTopics.length" class="topic-section">
         <h2>其他用户已选选题</h2>
         <div class="topics-grid">
-          <div v-for="topic in otherClaimedTopics" :key="topic.topic_id" class="topic-item card">
+          <div
+              v-for="topic in otherClaimedTopics"
+              :key="topic.topic_id"
+              class="topic-item card"
+          >
             <div class="topic-header">
               <span class="topic-title">{{ topic.topic_name }}</span>
-              <span class="topic-owner">出题人: {{topic.proposed_by_username }}</span>
+              <span class="topic-owner">出题人: {{ topic.proposed_by_username }}</span>
             </div>
             <p class="topic-description">{{ topic.topic_description }}</p>
             <div class="topic-meta small-text">
               <span class="topic-status">状态: {{ topic.status }}</span>
               <span class="topic-claimer">认领人: {{ topic.claimed_by_username }}</span>
             </div>
+            <template v-if="topic.submission_link"  >
+
+              <span class="hover-info" @click="openLink(topic.submission_link)">点击查看文章</span>
+            </template>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 
-<script setup>import { ref, computed, onMounted } from 'vue';
+
+
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
 import api from '../services/apiService';
 
 // 声明相关的响应式变量
@@ -119,26 +131,52 @@ const latestDirection = ref({
 const message = ref('');
 const messageType = ref(''); // 'success' or 'error'
 
+// 检查用户的登录状态并获取必要的数据
+async function checkLoginStatus() {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    try {
+      const response = await api.get('/users/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.status === 200) {
+        isLoggedIn.value = true;
+        currentUser.value = response.data;
+        await fetchDirections(); // 获取方向信息
+        if (latestDirection.value.direction_id) {
+          await fetchTopics(); // 只有在有方向 ID 时才获取选题
+        } else {
+          console.error('无法获取最新方向 ID');
+        }
+      } else {
+        isLoggedIn.value = false;
+      }
+    } catch (error) {
+      console.error('登录验证失败:', error.message);
+      isLoggedIn.value = false;
+    }
+  } else {
+    isLoggedIn.value = false;
+  }
+}
+
 // 获取选题方向及描述
 async function fetchDirections() {
   try {
     const response = await api.get('/directions', {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
     });
-    if (response.status === 200) {
+    if (response.status === 200 && response.data.length > 0) {
       directions.value = response.data;
       const lastDirection = directions.value[directions.value.length - 1];
-
-      // 更新最新选题方向，包括名字、描述和ID
       latestDirection.value = {
         direction_name: lastDirection.direction_name || '最新一期',
         description: lastDirection.description || '暂无描述',
         direction_id: lastDirection.direction_id
       };
-
-      console.log('最新选题方向:', latestDirection.value);
+      // console.log('最新选题方向:', latestDirection.value);
     } else {
-      console.error('获取选题方向失败:', response.statusText);
+      console.error('获取选题方向失败或没有方向数据');
     }
   } catch (error) {
     console.error('获取选题方向失败:', error.message);
@@ -147,18 +185,25 @@ async function fetchDirections() {
 
 // 根据最新方向ID获取选题
 async function fetchTopics() {
+  if (!latestDirection.value.direction_id) {
+    console.error('Direction ID is not set');
+    return;
+  }
+
+  // console.log('当前方向 ID:', latestDirection.value.direction_id);
+
   try {
-    // 使用 latestDirection.value.direction_id 作为查询参数
     const response = await api.get('/topics/current', {
       params: {
-        direction: latestDirection.value.direction_id  // 获取方向ID
+        direction: latestDirection.value.direction_id
       }
     });
 
     if (response.status === 200) {
-
       topics.value = response.data;
-      console.log(response);
+      topics.value.forEach(topic => {
+        submissionLinks.value[topic.topic_id] = topic.submission_link || '';
+      });
     } else {
       console.error('获取选题失败:', response.statusText);
     }
@@ -166,6 +211,7 @@ async function fetchTopics() {
     console.error('获取选题失败:', error.message);
   }
 }
+
 
 
 
@@ -181,7 +227,7 @@ const myClaimedTopics = computed(() => {
   });
 });
 
-// 其他用户已认促的选题
+// 其他用户已认领的选题
 const otherClaimedTopics = computed(() => {
   if (!currentUser.value) {
     return []; // 或者返回一个包含默认值的数组
@@ -199,29 +245,7 @@ const unclaimedTopics = computed(() => {
 });
 
 
-// 检查用户的登录状态并获取必要的数据
-async function checkLoginStatus() {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    try {
-      const response = await api.get('/users/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.status === 200) {
-        isLoggedIn.value = true;
-        currentUser.value = response.data;
-        await fetchTopics();
-      } else {
-        isLoggedIn.value = false;
-      }
-    } catch (error) {
-      console.error('登录验证失败:', error.message);
-      isLoggedIn.value = false;
-    }
-  } else {
-    isLoggedIn.value = false;
-  }
-}
+
 
 // 取消认领选题
 async function cancelClaim(topic_id) {
@@ -303,7 +327,6 @@ async function addTopic() {
   }
 }
 
-
 // 提交文章链接
 async function submitLink(topic_id) {
   const token = localStorage.getItem('authToken');
@@ -311,17 +334,16 @@ async function submitLink(topic_id) {
     showMessage('未找到Token，请先登录', 'error');
     return;
   }
-// 检查文章是否存在
+
   const link = submissionLinks.value[topic_id];
   if (!link) {
     showMessage('请提供一个有效的文章链接', 'error');
     return;
   }
 
-  // 验证链接格式
   const linkPattern = /^https:\/\/cloud\.tencent\.com\/developer\/article\/\d+$/;
   if (!linkPattern.test(link)) {
-    alert('文章链接格式不正确,请复制正确的url格式,参考如下\n 请使用 https://cloud.tencent.com/developer/article/{column}', 'error');
+    alert('文章链接格式不正确，请复制正确的url格式。');
     return;
   }
 
@@ -330,14 +352,13 @@ async function submitLink(topic_id) {
       submission_link: link,
       status: '已提交'
     }, {
-      headers: {'Authorization': `Bearer ${token}`}
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (response.status === 200) {
-      submissionLinks.value[topic_id] = '';
+      submissionLinks.value[topic_id] = ''; // 清空输入框
       await fetchTopics(); // 刷新选题列表
       alert('提交结果成功！', 'success');
-
     } else {
       alert('提交结果失败: ' + response.statusText, 'error');
     }
@@ -345,6 +366,7 @@ async function submitLink(topic_id) {
     alert('提交结果失败: ' + error.message, 'error');
   }
 }
+
 
 // 认领选题
 async function claimTopic(topic_id) {
@@ -380,26 +402,29 @@ async function claimTopic(topic_id) {
   }
 }
 
+// 点击查看文章跳转
+// 添加 openLink 函数
+function openLink(link) {
+  if (link) {
+    window.open(link, '_blank');
+  } else {
+    console.warn('No link provided');
+  }
+}
 
 // 使用 onMounted 钩子进行调试
 onMounted(async () => {
   try {
-    checkLoginStatus();  // 调用检查登录状态的函数
-    fetchDirections();  // 调用获取选题方向的函数
-
+    await checkLoginStatus(); // 确保用户登录状态
+    await fetchDirections(); // 先获取方向
+    if (latestDirection.value.direction_id) {
+      await fetchTopics(); // 然后获取选题，只有在有方向 ID 时才获取
+    }
     // 获取用户信息
     const userResponse = await api.get('/users/me');
     if (userResponse.status === 200) {
       currentUser.value = userResponse.data;
     }
-
-    // // 获取选题信息
-    // const topicsResponse = await api.get('/topics');
-    // if (topicsResponse.status === 200) {
-    //   topics.value = topicsResponse.data;
-    // }
-    fetchTopics();
-
   } catch (error) {
     console.error("获取数据失败：", error);
   }
@@ -419,6 +444,6 @@ function showMessage(msg, type) {
 
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 @import "../assets/TopicList.scss";
 </style>
