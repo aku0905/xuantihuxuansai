@@ -1,41 +1,41 @@
 from flask import jsonify
-from sqlalchemy.orm import joinedload
-from werkzeug.debug import console
-
-from backend.controllers.pointactions_controcall import update_user_points,delete_user_point_action
-from backend.models.topic_model import Topic
-
-from backend.db import db
-from sqlalchemy.sql import func
-from flask import jsonify
+from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql import func
 
+from backend.controllers.pointactions_controcall import update_user_points, delete_user_point_action
+from backend.models.topic_model import Topic
 from backend.models.user_model import User
 from backend.models.pointaction_model import PointAction
-from backend.models.topic_model import Topic
+from backend.db import db
 
 
 # 获取当前选题方向的题目
 def get_current_topics_by_direction(direction_id):
+    """
+    根据选题方向ID查询当前方向下的所有题目，并返回题目信息，包括提出者和认领者的用户名。
+    :param direction_id: 选题方向的唯一标识符
+    :return: 题目列表的JSON对象和状态码
+    """
     try:
         current_topics = Topic.query.filter_by(direction_id=direction_id) \
             .options(joinedload(Topic.proposed_by_user), joinedload(Topic.claimed_by_user)).all()
 
-        result = []
-        for topic in current_topics:
-            result.append({
+        result = [
+            {
                 'topic_id': topic.topic_id,
                 'direction_id': topic.direction_id,
                 'topic_name': topic.topic_name,
                 'topic_description': topic.topic_description,
                 'proposed_by': topic.proposed_by,
-                'proposed_by_username': topic.proposed_by_user.username if topic.proposed_by_user else None,  # 返回用户名
+                'proposed_by_username': topic.proposed_by_user.username if topic.proposed_by_user else None,
                 'claimed_by': topic.claimed_by,
-                'claimed_by_username': topic.claimed_by_user.username if topic.claimed_by_user else None,    # 返回认领者用户名
+                'claimed_by_username': topic.claimed_by_user.username if topic.claimed_by_user else None,
                 'submission_link': topic.submission_link,
                 'status': topic.status,
                 'submitted_at': topic.submitted_at
-            })
+            } for topic in current_topics
+        ]
         return jsonify(result), 200
     except SQLAlchemyError as e:
         print(f"SQLAlchemy Error: {str(e)}")
@@ -45,16 +45,17 @@ def get_current_topics_by_direction(direction_id):
 # 创建新选题
 def create_new_topic(data):
     """
-    根据传入的数据创建一个新的选题，并将其保存到数据库中，并根据规则为用户加积分。
+    创建新选题记录，并根据规则为提出者加积分。
+    :param data: 包含新选题信息的字典
+    :return: 返回成功创建的信息以及选题ID，或错误信息和状态码
     """
     try:
-        # 验证必填字段
         required_fields = ['direction_id', 'topic_name', 'topic_description', 'proposed_by', 'status']
         for field in required_fields:
             if field not in data:
-                return jsonify({'message': f'Missing required field: {field}'}), 400  # 返回400错误
+                return jsonify({'message': f'Missing required field: {field}'}), 400
 
-        # 创建 Topic 实例
+        # 创建并添加新选题实例到数据库
         new_topic = Topic(
             direction_id=data['direction_id'],
             topic_name=data['topic_name'],
@@ -68,69 +69,54 @@ def create_new_topic(data):
         db.session.add(new_topic)
         db.session.commit()
 
-        # 获取提出者ID和新创建的topic_id
         proposed_by = data['proposed_by']
-        topic_id = new_topic.topic_id  # 获取新插入的topic_id
+        topic_id = new_topic.topic_id
 
-        # 查询用户本周出题的加分记录
-        current_week_topics = PointAction.query.filter(
-            PointAction.user_id == proposed_by,
-            PointAction.action_type == '出题',
-            func.week(PointAction.created_at) == func.week(func.now())
-        ).count()
+        # 查询该方向下出题的加分记录数量
+        current_direction_topics = get_direction_points_count(
+            user_id=proposed_by,
+            action_type='出题',
+            direction_id=data['direction_id']
+        )
 
-        # 如果本周出题次数未超过3次，则调用封装好的函数增加2积分
-        if current_week_topics < 3:
+        # 若本方向出题次数未超过3次，则增加2积分
+        if current_direction_topics < 3:
             update_user_points(user_id=proposed_by, points=2, action_type='出题', topic_id=topic_id)
 
         return jsonify({'message': 'Topic created successfully', 'id': new_topic.topic_id}), 201
 
     except SQLAlchemyError as e:
-        db.session.rollback()  # 回滚数据库会话
-        print(f"SQLAlchemy Error: {str(e)}")  # 打印详细错误信息
+        db.session.rollback()
+        print(f"SQLAlchemy Error: {str(e)}")
         return jsonify({'message': 'Failed to create topic', 'error': str(e)}), 500
 
     except Exception as e:
-        print(f"Unexpected Error: {str(e)}")  # 捕获其他异常并打印错误
+        print(f"Unexpected Error: {str(e)}")
         return jsonify({'message': 'An unexpected error occurred', 'error': str(e)}), 500
-
 
 
 # 获取所有选题，并返回认领用户和提出者的用户名而不是ID
 def get_all_topics():
+    """
+    获取所有选题，并返回每个选题的详细信息，包括提出者和认领者的用户名。
+    :return: 包含所有选题信息的JSON对象和状态码
+    """
     try:
-        topics = Topic.query.all()
-        result = []
-        for topic in topics:
-            # 初始化认领者和提出者用户名为 None
-            claimed_by_username = None
-            proposed_by_username = None
+        topics = Topic.query.options(joinedload(Topic.proposed_by_user), joinedload(Topic.claimed_by_user)).all()
 
-            # 获取认领者用户名
-            if topic.claimed_by:
-                # 通过用户名查找
-                user = User.query.get(topic.claimed_by)
-                if user:
-                    claimed_by_username = user.username  # 使用用户名 # 调试信息
-
-            # 获取提出者用户名
-            if topic.proposed_by:
-                # 通过 proposed_by 字段的用户ID获取对应的用户名
-                proposer = User.query.get(topic.proposed_by)
-                if proposer:
-                    proposed_by_username = proposer.username  # 获取用户名
-
-            result.append({
+        result = [
+            {
                 'topic_id': topic.topic_id,
                 'direction_id': topic.direction_id,
                 'topic_name': topic.topic_name,
                 'topic_description': topic.topic_description,
-                'proposed_by': proposed_by_username,  # 返回用户名而不是ID
-                'claimed_by': claimed_by_username,    # 返回用户名而不是ID
+                'proposed_by': topic.proposed_by_user.username if topic.proposed_by_user else None,
+                'claimed_by': topic.claimed_by_user.username if topic.claimed_by_user else None,
                 'submission_link': topic.submission_link,
                 'status': topic.status,
                 'submitted_at': topic.submitted_at
-            })
+            } for topic in topics
+        ]
 
         return jsonify(result), 200
     except SQLAlchemyError as e:
@@ -140,6 +126,11 @@ def get_all_topics():
 
 # 根据 topic_id 获取特定的选题
 def get_topic_by_id(topic_id):
+    """
+    根据选题ID查询特定选题，并返回详细信息。
+    :param topic_id: 选题的唯一标识符
+    :return: 包含特定选题信息的JSON对象和状态码
+    """
     try:
         topic = Topic.query.get(topic_id)
         if topic:
@@ -163,101 +154,92 @@ def get_topic_by_id(topic_id):
 
 # 更新现有选题
 def update_existing_topic(topic_id, data):
+    """
+    更新数据库中的现有选题信息，并根据更新的内容调整相关的用户积分。
+
+    :param topic_id: 选题的唯一标识符
+    :param data: 包含更新信息的字典
+    :return: 返回更新成功或失败的信息以及相应的HTTP状态码
+    """
     try:
+        # 尝试从数据库中获取选题
         topic = Topic.query.get(topic_id)
         if not topic:
             return jsonify({'message': 'Topic not found'}), 404
 
-        # 更新选题字段
-        topic.direction_id = data.get('direction_id', topic.direction_id)
-        topic.topic_name = data.get('topic_name', topic.topic_name)
-        topic.topic_description = data.get('topic_description', topic.topic_description)
-        topic.proposed_by = data.get('proposed_by', topic.proposed_by)
-        topic.claimed_by = data.get('claimed_by', topic.claimed_by)
-        topic.submission_link = data.get('submission_link', topic.submission_link)
-        topic.status = data.get('status', topic.status)
+        # 遍历更新数据，更新选题的属性
+        for key, value in data.items():
+            # 只更新选题表中存在的字段，否则保持原值
+            setattr(topic, key, value if key in Topic.__table__.columns else getattr(topic, key))
 
-        # 提交选题的更新
+        # 提交更改到数据库
         db.session.commit()
 
-        # 获取提出者和认领者ID
+        # 获取选题的相关信息
         proposed_by = topic.proposed_by
         claimed_by = topic.claimed_by
+        direction_id = topic.direction_id
 
-        #取消选题时
-        # 检查是否取消选题操作
+        # 如果选题状态为待认领且没有被认领，更新出题人的积分
         if data.get('claimed_by') is None and data.get('status') == '待认领':
-            proposed_by = topic.proposed_by
-
-            # 查询用户本周出题次数
-            current_week_topics = Topic.query.filter(
-                Topic.proposed_by == proposed_by,
-                Topic.claimed_by.is_(None),# 选题状态更改为待认领
-                func.week(Topic.created_at) == func.week(func.now())
-            ).count()
-
-            # 如果用户本周出题少于等于3次，则增加2积分
-            if current_week_topics <= 3:
+            direction_topics_count = get_direction_points_count(
+                user_id=proposed_by,
+                action_type='出题',
+                direction_id=direction_id
+            )
+            # 如果出题人在该方向上的题目数量小于等于3，增加积分
+            if direction_topics_count <= 3:
                 update_user_points(user_id=proposed_by, points=2, action_type='出题', topic_id=topic_id)
 
-        # 认领题目时
-        # 如果认领人与提出者相同，则删除该题目于出题人的出题加分记录，同时扣除之前的出题所加积分
+        # 如果选题被认领且出题人与认领人相同，更新积分
         if data.get('claimed_by') and proposed_by == claimed_by:
-            # 查询用户本周出题且待认领数量
-            current_week_topics = Topic.query.filter(
-                Topic.proposed_by == proposed_by,
-                Topic.claimed_by.is_(None), # 选题状态为待认领
-                func.week(Topic.created_at) == func.week(func.now())
-            ).count()
-            # 如果用户本周出题且待认领数量少于等于3次，则删除加分记录并扣除积分
-            if current_week_topics < 3:
-                # 删除加分记录
+            direction_topics_count = get_direction_points_count(
+                user_id=proposed_by,
+                action_type='出题',
+                direction_id=direction_id
+            )
+            # 如果出题人在该方向上的题目数量小于3，删除认领人的积分并减少用户积分
+            if direction_topics_count < 3:
                 delete_user_point_action(user_id=claimed_by, topic_id=topic_id)
-                # 更新用户积分
                 user = User.query.get(claimed_by)
                 user.available_points -= 2
                 user.total_points -= 2
-
                 db.session.add(user)
                 db.session.commit()
 
-        # 提交作品时为提出者和认领者加分
+        # 如果提供了新的提交链接，更新积分
         if data.get('submission_link'):
-
-            # 提出者加分
-            # 查询该题目是否已经被提交过
             previous_submission = PointAction.query.filter_by(topic_id=topic_id, action_type='题目被完成').first()
 
-            # 如果提出者不等于认领者，才能加分
-            if proposed_by != claimed_by:
-                # 查询提出者本周累计加分是否超过15分
-                if not previous_submission:
-                    current_week_proposed_points = db.session.query(func.sum(PointAction.points)).filter(
-                        PointAction.user_id == proposed_by,
-                        PointAction.action_type == '题目被完成',
-                        func.week(PointAction.created_at) == func.week(func.now())
-                    ).scalar() or 0 # 使用 scalar() 获取聚合值，防止 None
+            # 如果出题人与认领人不同且之前没有完成记录，更新出题人积分
+            if proposed_by != claimed_by and not previous_submission:
+                proposed_points_sum = db.session.query(func.sum(PointAction.points)).join(
+                    Topic, PointAction.topic_id == Topic.topic_id
+                ).filter(
+                    PointAction.user_id == proposed_by,
+                    PointAction.action_type == '题目被完成',
+                    Topic.direction_id == direction_id
+                ).scalar() or 0
+                if proposed_points_sum < 15:
+                    points_to_add = min(5, 15 - proposed_points_sum)
+                    update_user_points(user_id=proposed_by, points=points_to_add, action_type='题目被完成', topic_id=topic_id)
 
-                    # 如果提出者的本周积分未超过15分，则增加5分
-                    if current_week_proposed_points < 15:
-                        points_to_add = min(5, 15 - current_week_proposed_points)
-                        update_user_points(user_id=proposed_by, points=points_to_add, action_type='题目被完成', topic_id=topic_id)
-
-            #认领者加分
-            # 查询认领者本周累计加分是否超过15分
-            current_week_claimed_points = db.session.query(func.sum(PointAction.points)).filter(
+            # 更新认领人积分
+            claimed_points_sum = db.session.query(func.sum(PointAction.points)).join(
+                Topic, PointAction.topic_id == Topic.topic_id
+            ).filter(
                 PointAction.user_id == claimed_by,
                 PointAction.action_type == '提交作品',
-                func.week(PointAction.created_at) == func.week(func.now())
-            ).scalar() or 0  # 使用 scalar() 获取聚合值，防止 None
-
-            # 如果认领者的本周积分未超过15分，则增加15分
-            if current_week_claimed_points < 15:
-                points_to_add = min(15, 15 - current_week_claimed_points)
+                Topic.direction_id == direction_id
+            ).scalar() or 0
+            if claimed_points_sum < 15:
+                points_to_add = min(15, 15 - claimed_points_sum)
                 update_user_points(user_id=claimed_by, points=points_to_add, action_type='提交作品', topic_id=topic_id)
 
+        # 返回更新成功的消息和状态码
         return jsonify({'message': 'Topic updated successfully'}), 200
     except SQLAlchemyError as e:
+        # 如果发生数据库错误，回滚事务并返回错误信息
         db.session.rollback()
         print(f"SQLAlchemy Error: {str(e)}")
         return jsonify({'message': 'Failed to update topic', 'error': str(e)}), 500
@@ -265,6 +247,11 @@ def update_existing_topic(topic_id, data):
 
 # 删除选题
 def delete_topic_record(topic_id):
+    """
+    根据选题ID删除数据库中的选题记录。
+    :param topic_id: 选题的唯一标识符
+    :return: 成功或失败的JSON信息和状态码
+    """
     try:
         topic = Topic.query.get(topic_id)
         if not topic:
@@ -277,3 +264,28 @@ def delete_topic_record(topic_id):
         db.session.rollback()
         print(f"SQLAlchemy Error: {str(e)}")
         return jsonify({'message': 'Failed to delete topic', 'error': str(e)}), 500
+
+
+# 统计加分次数
+def get_direction_points_count(user_id, action_type, direction_id=None):
+    """
+    统计某用户在特定选题方向上的加分次数，基于指定的action类型。
+    :param user_id: 用户ID
+    :param action_type: 行为类型，例如“出题”或“提交作品”
+    :param direction_id: 选题方向的唯一标识符，默认为None
+    :return: 满足条件的加分记录的数量
+    """
+    topic_alias = aliased(Topic)
+
+    query = db.session.query(PointAction).join(
+        topic_alias, PointAction.topic_id == topic_alias.topic_id
+    ).filter(
+        PointAction.user_id == user_id,
+        PointAction.action_type == action_type
+    )
+
+    # 如果提供了方向ID，添加筛选条件
+    if direction_id:
+        query = query.filter(topic_alias.direction_id == direction_id)
+
+    return query.count()
